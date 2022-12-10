@@ -1,1 +1,1 @@
-EJS lanjut contact update delete dan duplicate (belum beres)
+EJS lanjut contact update delete dan duplicate

@@ -67,15 +67,13 @@ app
         })
     })
     // create contact dengan validasi
-    .post('/create', body('name')
-    // .custom((value) => {
-    //     const duplicate = contacts.checkDuplicate(req.body.name);
-    //     if (value === duplicate){
-    //         throw new Error('Nama sudah ada!')
-    //     }
-    //     return true
-    //   })
-    .isAlpha('en-US', { ignore: ' ' }).withMessage('Format nama tidak sesuai!'), body('phone').isMobilePhone('id-ID').withMessage('Format No. HP tidak sesuai!'), body('email').isEmail().withMessage('Format email tidak sesuai!'), (req, res) => {
+    .post('/create', body('name').custom((value) => {
+        const duplicate = contacts.checkDuplicate(value);
+        if (duplicate){
+            throw new Error('Nama sudah ada!');
+        }
+        return true;
+      }).isAlpha('en-US', { ignore: ' ' }).withMessage('Format nama tidak sesuai!'), body('phone').isMobilePhone('id-ID').withMessage('Format No. HP tidak sesuai!'), body('email').isEmail().withMessage('Format email tidak sesuai!'), (req, res) => {
         
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -105,9 +103,15 @@ app.get('/contact/:name', (req, res) => {
 
 // hapus data
 app.get('/delete/:name', (req, res) => {
-    cont = contacts.del(req.params.name);
+    const cont = contacts.getName(req.params.name);
 
-    res.redirect('/contact');
+    if (!cont) {
+        res.status("404");
+        res.send("404");
+    } else {
+        contacts.del(req.params.name);
+        res.redirect('/contact');
+    }
 })
 
 // buka halaman update
@@ -121,7 +125,13 @@ app
         })
     })
     // update contact
-    .post('/update/:name', body('name').isAlpha('en-US', { ignore: ' ' }).withMessage('Format nama tidak sesuai!'), body('phone').isMobilePhone('id-ID').withMessage('Format No. HP tidak sesuai!'), body('email').isEmail().withMessage('Format email tidak sesuai!'), (req, res) => {
+    .post('/update/:name', body('name').custom((value, {req}) => {
+        const duplicate = contacts.checkDuplicate(value);
+        if (value !== req.body.prevName && duplicate){
+            throw new Error('Nama sudah ada!');
+        }
+        return true;
+      }).isAlpha('en-US', { ignore: ' ' }).withMessage('Format nama tidak sesuai!'), body('phone').isMobilePhone('id-ID').withMessage('Format No. HP tidak sesuai!'), body('email').isEmail().withMessage('Format email tidak sesuai!'), (req, res) => {
         
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
